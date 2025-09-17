@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from models import Todo
 from database import todos
 
+
 router = APIRouter(prefix="/todos", tags=["todos"])
 
 # Get all todos

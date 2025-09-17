@@ -1,2 +1,2 @@
 
-todos = []
+todos: list[dict] = []

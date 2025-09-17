@@ -23,3 +23,10 @@ def create_todo(todo: Todo):
     todo.id = len(todos) + 1
     todos.append(todo.dict())  # fixed typo
     return todo
+@router.delete("/{todo_id}")
+def delete_todo(todo_id: int):
+    for idx, todo in enumerate(todos):
+        if todo["id"] == todo_id:
+            deleted = todos.pop(idx)
+            return {"message": "Todo deleted", "todo": deleted}
+    raise HTTPException(status_code=404, detail="Todo not found")

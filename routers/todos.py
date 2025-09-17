@@ -4,6 +4,7 @@ from database import todos
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
+# Get all todos
 @router.get("/")
 def get_todos():
     return todos
@@ -20,23 +21,5 @@ def get_todo(todo_id: int):
 @router.post("/")
 def create_todo(todo: Todo):
     todo.id = len(todos) + 1
-    todos.append(todo.dict())
+    todos.append(todo.dict())  # fixed typo
     return todo
-
-# Update a todo
-@router.put("/{todo_id}")
-def update_todo(todo_id: int, updated: Todo):
-    for idx, todo in enumerate(todos):
-        if todo["id"] == todo_id:
-            updated.id = todo_id
-            todos[idx] = updated.dict()
-            return updated
-    raise HTTPException(status_code=404, detail="Todo not found")
-
-# Delete a todo
-@router.delete("/{todo_id}")
-def delete_todo(todo_id: int):
-    for idx, todo in enumerate(todos):
-        if todo["id"] == todo_id:
-            return todos.pop(idx)
-    raise HTTPException(status_code=404, detail="Todo not found")

@@ -1,33 +1,54 @@
+# routers/todos.py
 from fastapi import APIRouter, HTTPException
-from models import Todo
+from models import TodoIn, TodoUpdate, TodoOut
 from database import todos
-
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
-# Get all todos
-@router.get("/")
-def get_todos():
+def _find_index(todo_id: int) -> int:
+    for i, t in enumerate(todos):
+        if t["id"] == todo_id:
+            return i
+    return -1
+
+@router.get("/", response_model=list[TodoOut])
+def list_todos():
     return todos
 
-# Get a single todo
-@router.get("/{todo_id}")
+@router.get("/{todo_id}", response_model=TodoOut)
 def get_todo(todo_id: int):
-    for todo in todos:
-        if todo["id"] == todo_id:
-            return todo
-    raise HTTPException(status_code=404, detail="Todo not found")
+    i = _find_index(todo_id)
+    if i == -1:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return todos[i]
 
-# Create a new todo
-@router.post("/")
-def create_todo(todo: Todo):
-    todo.id = len(todos) + 1
-    todos.append(todo.dict())  # fixed typo
-    return todo
-@router.delete("/{todo_id}")
+@router.post("/", response_model=TodoOut, status_code=201)
+def create_todo(data: TodoIn):
+    new_id = (todos[-1]["id"] + 1) if todos else 1
+    item = {"id": new_id, **data.model_dump()}
+    todos.append(item)
+    return item
+
+@router.put("/{todo_id}", response_model=TodoOut)
+def replace_todo(todo_id: int, data: TodoIn):
+    i = _find_index(todo_id)
+    if i == -1:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    todos[i] = {"id": todo_id, **data.model_dump()}
+    return todos[i]
+
+@router.patch("/{todo_id}", response_model=TodoOut)
+def patch_todo(todo_id: int, data: TodoUpdate):
+    i = _find_index(todo_id)
+    if i == -1:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    changed = data.model_dump(exclude_unset=True)
+    todos[i].update(changed)
+    return todos[i]
+
+@router.delete("/{todo_id}", status_code=204)
 def delete_todo(todo_id: int):
-    for idx, todo in enumerate(todos):
-        if todo["id"] == todo_id:
-            deleted = todos.pop(idx)
-            return {"message": "Todo deleted", "todo": deleted}
-    raise HTTPException(status_code=404, detail="Todo not found")
+    i = _find_index(todo_id)
+    if i == -1:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    todos.pop(i)

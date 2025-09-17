@@ -5,16 +5,19 @@ from database import todos
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
+# helper: find index by id
 def _find_index(todo_id: int) -> int:
     for i, t in enumerate(todos):
         if t["id"] == todo_id:
             return i
     return -1
 
+# list all todos
 @router.get("/", response_model=list[TodoOut])
 def list_todos():
     return todos
 
+# get a single todo
 @router.get("/{todo_id}", response_model=TodoOut)
 def get_todo(todo_id: int):
     i = _find_index(todo_id)
@@ -22,6 +25,7 @@ def get_todo(todo_id: int):
         raise HTTPException(status_code=404, detail="Todo not found")
     return todos[i]
 
+# create new todo
 @router.post("/", response_model=TodoOut, status_code=201)
 def create_todo(data: TodoIn):
     new_id = (todos[-1]["id"] + 1) if todos else 1
@@ -29,6 +33,7 @@ def create_todo(data: TodoIn):
     todos.append(item)
     return item
 
+# replace (full update)
 @router.put("/{todo_id}", response_model=TodoOut)
 def replace_todo(todo_id: int, data: TodoIn):
     i = _find_index(todo_id)
@@ -37,6 +42,7 @@ def replace_todo(todo_id: int, data: TodoIn):
     todos[i] = {"id": todo_id, **data.model_dump()}
     return todos[i]
 
+# partial update
 @router.patch("/{todo_id}", response_model=TodoOut)
 def patch_todo(todo_id: int, data: TodoUpdate):
     i = _find_index(todo_id)
@@ -46,9 +52,11 @@ def patch_todo(todo_id: int, data: TodoUpdate):
     todos[i].update(changed)
     return todos[i]
 
+# delete
 @router.delete("/{todo_id}", status_code=204)
 def delete_todo(todo_id: int):
     i = _find_index(todo_id)
     if i == -1:
         raise HTTPException(status_code=404, detail="Todo not found")
     todos.pop(i)
+    # return nothing (204 No Content)
